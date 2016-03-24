@@ -1,0 +1,24 @@
+{
+  "name": "spider-for-my-lofter",
+  "version": "0.0.1",
+  "description": "nodejs spider for my lofter blog",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anchengjian/spiderForMyLofter.git"
+  },
+  "keywords": [
+    "nodejs",
+    "spider",
+    "lofter"
+  ],
+  "author": "anchengjian.com",
+  "license": "ISC",
+  "dependencies": {
+    "request": "^2.69.0",
+    "rssspider": "^1.4.3"
+  }
+}
