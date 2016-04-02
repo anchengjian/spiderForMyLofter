@@ -7,6 +7,7 @@
       url = require('url'),
       events = require('events'),
       writeImgEvent = new events.EventEmitter(),
+      writeMDEvent = new events.EventEmitter(),
       host='anchengjian.lofter.com',
       rssUrl='http://anchengjian.lofter.com/rss',
       requestOptions={
@@ -23,7 +24,9 @@
           'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36'
         }
       },
-      imgsPath='./imgs'
+      imgsPath='./imgs',
+      articlesPath='./articles',
+      toMarkdown = require('./libs/toMarkdown.js');
 
   spide
     .fetchRss(rssUrl)
@@ -31,7 +34,12 @@
 
       fs.mkdir(imgsPath, function(err){
         if(err) throw err;
-        console.log('mkdir ./imgs ok~~');
+        console.log('mkdir '+imgsPath+' ok~~');
+      });
+
+      fs.mkdir(articlesPath, function(err){
+        if(err) throw err;
+        console.log('mkdir '+articlesPath+' ok~~');
       });
 
       // 找出图片
@@ -50,13 +58,25 @@
         return ele;
       });
 
-      fs.writeFile('./blog.json', JSON.stringify(data), function(err){
+      // 保存源文件
+      fs.writeFile(articlesPath+'/blog.json', JSON.stringify(data), function(err){
         if (err) throw err;
-        console.log('blog.json  saved!!');
+        console.log(articlesPath+'/blog.json  saved!!');
       });
 
-      var len=allImgs.length;
+      // 储存为md格式
+      var articlesLen=data.length;
+      writeMDEvent.on('articleSaved', function(){
+        var article=data[--articlesLen];
+        writeMD( article, function(){
+          if(articlesLen<=0) return;
+          writeMDEvent.emit('articleSaved');
+        });
+      });
+      // 初始化触发
+      writeMDEvent.emit('articleSaved');
 
+      var len=allImgs.length;
       // 监听完成事件
       writeImgEvent.on('done', function(){
         var img=allImgs[--len];
@@ -83,6 +103,33 @@
     request(requestOptions).pipe(fs.createWriteStream(imgsPath+img.name));
 
     console.log(img.name+'  saved!!');
+    if(!!callback && isFn(callback)) callback();
+  }
+
+  function writeMD( article, callback ) {
+    if(!article){
+      if(!!callback && isFn(callback)) callback();
+      return ;
+    }
+
+    var name=articlesPath+'/'+article.title+'.md',
+        data=toMarkdown.toMarkdown(article.description),
+        atime=article.date,
+        mtime=article.date;
+
+    fs.writeFile(name, data,  function(err) {
+      if (err) return console.error(err);
+      console.log(name+" 数据写入成功！");
+
+      fs.utimes(name, atime, mtime, function(err){
+       if(err) throw err;
+       console.log(name+' 时间修改成功！');
+      });
+    });
+
+    
+
+    console.log(article.title+'  saved!!');
     if(!!callback && isFn(callback)) callback();
   }
 
